@@ -15,6 +15,7 @@ const {
   getUserStatistics,
   loginUserViaGoogle,
   registerUserViaGoogle,
+  sendOtp
 } = require("../controllers/user"); // Adjust the path as necessary
 
 const router = express.Router();
@@ -33,5 +34,5 @@ router.get("/get-user/:userId", getUserById);
 router.get("/user-stats", getUserStatistics);
 router.post("/loginwithgoogle", loginUserViaGoogle);
 router.post("/registerwithgoogle", registerUserViaGoogle);
-
+router.post("/send-otp", sendOtp);
 module.exports = router;

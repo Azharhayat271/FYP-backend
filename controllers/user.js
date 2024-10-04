@@ -3,6 +3,7 @@ const sendEmail = require("../utils/sendEmail");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { sendResetPasswordEmail } = require("../utils/forgetPassword");
+const {sendOtpEmail} = require("../utils/sendOTP");
 const dumbPasswords = require("dumb-passwords");
 const moment = require("moment");
 //methods
@@ -13,6 +14,12 @@ const generateResetToken = (user) => {
     expiresIn: "1h",
   });
 };
+
+const generateOtp = () => {
+  // Generate a 6-digit OTP
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
 
 //API
 
@@ -459,3 +466,34 @@ exports.loginUserViaGoogle = async (req, res) => {
     res.status(500).json({ success: false, message: "Server Error" });
   }
 };
+
+
+exports.sendOtp = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Generate OTP
+    const otp = generateOtp();
+    user.otp = otp; // Assuming there's an 'otp' field in your user model
+    user.otpExpires = Date.now() + 300000; // OTP expires in 5 minutes
+    await user.save();
+
+    // Send OTP via email or SMS
+    const otpResult = await sendOtpEmail(email, otp); // Create sendOtpEmail function
+    if (!otpResult.success) {
+      return res.status(500).json(otpResult);
+    }
+
+    res.status(200).json({ success: true, message: "OTP sent successfully" });
+  } catch (error) {
+    console.error("Send OTP error:", error);
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
+
