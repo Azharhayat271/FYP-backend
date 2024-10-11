@@ -30,13 +30,21 @@ exports.registerUser = async (req, res) => {
 
     // Check if the password is common
     if (dumbPasswords.check(password)) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message:
-            "Your password is found in the Leak Password Dictonary. Please use a stronger password.",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Your password is found in the Leak Password Dictionary. Please use a stronger password.",
+      });
+    }
+
+    // Check for existing email or username
+    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: existingUser.email === email 
+          ? "Email already in use. Please use a different email." 
+          : "Username already taken. Please choose a different username."
+      });
     }
 
     const user = new User({ name, email, username, password, gender, phoneNo });
@@ -45,9 +53,7 @@ exports.registerUser = async (req, res) => {
     await user.save();
 
     // Send email with the token
-    const emailVerificationUrl = `${req.protocol}://${req.get(
-      "host"
-    )}/api/users/verify-email?token=${emailVerificationToken}&email=${email}`;
+    const emailVerificationUrl = `${req.protocol}://${req.get("host")}/api/users/verify-email?token=${emailVerificationToken}&email=${email}`;
     const message = `Please verify your email by clicking on the following link: ${emailVerificationUrl}`;
 
     await sendEmail({
@@ -56,17 +62,15 @@ exports.registerUser = async (req, res) => {
       message,
     });
 
-    res
-      .status(201)
-      .json({
-        success: true,
-        message:
-          "User registered. Please check your email to verify your account.",
-      });
+    res.status(201).json({
+      success: true,
+      message: "User registered. Please check your email to verify your account.",
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 // Verify email
 exports.verifyEmail = async (req, res) => {
@@ -113,10 +117,11 @@ exports.verifyEmailLink = async (req, res) => {
       user.isEmailVerified = true;
       user.emailVerificationCode = undefined;
       user.emailVerificationTokenExpires = undefined;
+      user.status = "approved";
       await user.save();
 
       // Redirect to an external URL (e.g., google.com) after successful verification
-      return res.redirect("https://www.google.com");
+      return res.redirect("https://fyp-webportal.vercel.app/login");
     } else {
       return res
         .status(400)
