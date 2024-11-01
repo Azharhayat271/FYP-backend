@@ -501,4 +501,42 @@ exports.sendOtp = async (req, res) => {
   }
 };
 
+// Change password for user by ID
+exports.changePassword = async (req, res) => {
+  const { userId } = req.params; // Assuming userId is passed as a URL parameter
+  const { oldPassword, newPassword } = req.body;
+
+  try {
+    // Find the user by ID
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Verify the old password
+    const isMatch = await user.comparePassword(oldPassword);
+    if (!isMatch) {
+      return res.status(400).json({ success: false, message: "Incorrect old password" });
+    }
+
+    // Check if the new password is strong enough
+    if (dumbPasswords.check(newPassword)) {
+      return res.status(400).json({
+        success: false,
+        message: "The new password is too common. Please choose a stronger password.",
+      });
+    }
+
+    // Hash and save the new password
+    user.password = newPassword;
+    await user.save();
+
+    res.status(200).json({ success: true, message: "Password changed successfully" });
+  } catch (error) {
+    console.error("Password change error:", error);
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
+
 

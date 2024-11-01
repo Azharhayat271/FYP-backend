@@ -15,7 +15,8 @@ const {
   getUserStatistics,
   loginUserViaGoogle,
   registerUserViaGoogle,
-  sendOtp
+  sendOtp,
+  changePassword
 } = require("../controllers/user"); // Adjust the path as necessary
 
 const router = express.Router();
@@ -26,6 +27,8 @@ router.get("/verify-email", verifyEmailLink);
 router.post("/login", login);
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password", resetPassword);
+router.put("/change-password/:userId", changePassword);
+
 // router.get("/get-all-users", authenticateJWT, getAllUsers)
 router.get("/get-all-users", getAllUsers);
 router.put("/update-user/:userId", updateUserById);
